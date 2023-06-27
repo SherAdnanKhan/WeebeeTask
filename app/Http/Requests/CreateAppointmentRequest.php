@@ -23,7 +23,7 @@ class CreateAppointmentRequest extends FormRequest
     {
         return [
             'service_id' => 'required|integer|exists:services,id',
-            'appointment_start_time' => 'required|date',
+            'appointment_start_time' => 'required|date_format:Y-m-d H:i:s',
             'users' => 'required|array',
             'users.*.first_name' => 'required|string',
             'users.*.last_name' => 'required|string',
