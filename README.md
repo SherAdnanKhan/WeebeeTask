@@ -1,6 +1,7 @@
 Installation step
 
 Composer install
+
     php artisan key:generate
     
     php artisan migrate
