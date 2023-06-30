@@ -8,6 +8,8 @@ class CreateAppointmentRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
+     *
+     * @return bool - Returns true if the user is authorized, false otherwise
      */
     public function authorize(): bool
     {
@@ -17,7 +19,7 @@ class CreateAppointmentRequest extends FormRequest
     /**
      * Get the validation rules that apply to the request.
      *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array|string>
+     * @return array - Array containing the validation rules
      */
     public function rules(): array
     {
@@ -30,5 +32,4 @@ class CreateAppointmentRequest extends FormRequest
             'users.*.email' => 'required|string|email',
         ];
     }
-
 }

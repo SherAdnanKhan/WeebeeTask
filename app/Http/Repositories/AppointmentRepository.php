@@ -3,10 +3,18 @@
 namespace App\Http\Repositories;
 
 use App\Models\Appointment;
+use DateTime;
 
 class AppointmentRepository
 {
-    public function getAppointments($service_id, $weekDates)
+    /**
+     * Get appointments for a given service ID and week dates.
+     *
+     * @param int $service_id - ID of the service
+     * @param array $weekDates - Array of week dates
+     * @return array - Array of appointments grouped by day of the week
+     */
+    public function getAppointments(int $service_id, array $weekDates): array
     {
         return Appointment::select('start_time', 'end_time')
             ->selectRaw('COUNT(start_time) as total')
@@ -29,7 +37,15 @@ class AppointmentRepository
             ->toArray();
     }
 
-    public function getConflictingAppointments($service_id, $appointmentStartTime, $appointmentEndTime)
+    /**
+     * Get conflicting appointments for a given service ID and appointment time range.
+     *
+     * @param int $service_id - ID of the service
+     * @param DateTime $appointmentStartTime - Appointment start time
+     * @param DateTime $appointmentEndTime - Appointment end time
+     * @return \Illuminate\Database\Eloquent\Collection - Collection of conflicting appointments
+     */
+    public function getConflictingAppointments(int $service_id, DateTime $appointmentStartTime, DateTime $appointmentEndTime): \Illuminate\Database\Eloquent\Collection
     {
         return Appointment::where('service_id', $service_id)
             ->where(function ($query) use ($appointmentStartTime, $appointmentEndTime) {
@@ -38,7 +54,16 @@ class AppointmentRepository
             })->lockForUpdate()->get();
     }
 
-    public function createAppointment($user, $service_id, $appointmentStartTime, $appointmentEndTime)
+    /**
+     * Create a new appointment.
+     *
+     * @param \Illuminate\Database\Eloquent\Model $user - User model
+     * @param int $service_id - ID of the service
+     * @param DateTime $appointmentStartTime - Appointment start time
+     * @param DateTime $appointmentEndTime - Appointment end time
+     * @return void
+     */
+    public function createAppointment(\Illuminate\Database\Eloquent\Model $user, int $service_id, DateTime $appointmentStartTime, DateTime $appointmentEndTime): void
     {
         $appointment = new Appointment;
         $appointment->service_id = $service_id;

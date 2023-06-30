@@ -3,10 +3,18 @@
 namespace App\Http\Repositories;
 
 use App\Models\Holiday;
+use DateTime;
 
 class HolidayRepository
 {
-    public function getHolidays($service_id, $weekDates)
+    /**
+     * Get holidays for a given service ID and week dates.
+     *
+     * @param int $service_id - ID of the service
+     * @param array $weekDates - Array of week dates
+     * @return array - Array of holidays keyed by day name
+     */
+    public function getHolidays(int $service_id, array $weekDates): array
     {
         return Holiday::selectRaw('DAYNAME(date) as day_name, date, start_time, end_time')
             ->where('service_id', $service_id)
@@ -16,7 +24,15 @@ class HolidayRepository
             ->toArray();
     }
 
-    public function getHoliday($service_id, $appointmentStartTime, $appointmentEndTime)
+    /**
+     * Get holiday for a given service ID and appointment time range.
+     *
+     * @param int $service_id - ID of the service
+     * @param DateTime $appointmentStartTime - Appointment start time
+     * @param DateTime $appointmentEndTime - Appointment end time
+     * @return \Illuminate\Database\Eloquent\Model|null - Holiday model or null if not found
+     */
+    public function getHoliday(int $service_id, DateTime $appointmentStartTime, DateTime $appointmentEndTime): ?\Illuminate\Database\Eloquent\Model
     {
         $holiday = Holiday::where('service_id', $service_id)
             ->where('date', $appointmentStartTime->format('Y-m-d'))

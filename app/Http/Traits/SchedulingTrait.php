@@ -7,12 +7,12 @@ trait SchedulingTrait
     /**
      * Calculate service slots and cleanup breaks.
      *
-     * @param  string $start_time - Start time of the schedule in 'H:i:s' format
-     * @param  string $end_time - End time of the schedule in 'H:i:s' format
-     * @param  int $duration_minutes - Duration of the service in minutes
-     * @param  int $cleanup_break_minutes - Duration of the cleanup break in minutes
-     * @param  object $breakTimes - Duration of the cleanup break starttime and endtime in minutes
-     * @return array
+     * @param string $start_time - Start time of the schedule in 'H:i:s' format
+     * @param string $end_time - End time of the schedule in 'H:i:s' format
+     * @param int $duration_minutes - Duration of the service in minutes
+     * @param int $cleanup_break_minutes - Duration of the cleanup break in minutes
+     * @param object $breakTimes - Duration of the cleanup break starttime and endtime in minutes
+     * @return array - Array containing 'slots' and 'breaks'
      */
     public function calculateSlotsAndBreaks(string $start_time, string $end_time, int $duration_minutes, int $cleanup_break_minutes, object $breakTimes): array
     {
@@ -39,7 +39,7 @@ trait SchedulingTrait
                 $slots[] = ['start_time' => date('H:i:s', $current_time), 'end_time' => date('H:i:s', $slot_end_time)];
             }
 
-            // Move to next slot/break
+            // Move to the next slot/break
             $current_time = $slot_end_time;
 
             // Calculate break end time
@@ -58,14 +58,20 @@ trait SchedulingTrait
                 $breaks[] = ['start_time' => date('H:i:s', $current_time), 'end_time' => date('H:i:s', $break_end_time)];
             }
 
-            // Move to next slot/break
+            // Move to the next slot/break
             $current_time = $break_end_time;
         }
 
         return ['slots' => $slots, 'breaks' => $breaks];
     }
 
-    public function getMatchingDates($date)
+    /**
+     * Get matching dates for a given date.
+     *
+     * @param string $date - Date in 'Y-m-d' format
+     * @return array - Array of matching dates
+     */
+    public function getMatchingDates(string $date): array
     {
         $matchingDates = [];
 
@@ -83,7 +89,15 @@ trait SchedulingTrait
         return $matchingDates;
     }
 
-    public function isSlotAvailable($slot, $existingAppointments, $max_clients)
+    /**
+     * Check if a slot is available for booking.
+     *
+     * @param array $slot - Slot information with 'start_time' and 'end_time'
+     * @param array $existingAppointments - Array of existing appointments
+     * @param int $max_clients - Maximum number of clients for a slot
+     * @return bool|int - False if slot is not available, otherwise returns the number of available slots
+     */
+    public function isSlotAvailable(array $slot, array $existingAppointments, int $max_clients)
     {
         $slotStartTime = strtotime($slot['start_time']);
         $slotEndTime = strtotime($slot['end_time']);

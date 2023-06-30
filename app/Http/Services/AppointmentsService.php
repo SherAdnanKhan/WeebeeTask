@@ -5,6 +5,7 @@ namespace App\Http\Services;
 use DateTime;
 use Exception;
 use DateInterval;
+use Illuminate\Support\Collection;
 use App\Http\Traits\SchedulingTrait;
 use App\Http\Repositories\UserRepository;
 use App\Http\Repositories\HolidayRepository;
@@ -40,7 +41,14 @@ class AppointmentsService
         $this->userRepository = $userRepository;
     }
 
-    public function index($service_id, $date)
+    /**
+     * Get the index of appointments for a given service and date.
+     *
+     * @param int $service_id - ID of the service
+     * @param string $date - Date in 'Y-m-d' format
+     * @return array - Array containing 'weekly_wise_slot' or 'error' if an exception occurs
+     */
+    public function index(int $service_id, string $date): array
     {
         try {
             $serviceSchedules = $this->serviceScheduleRepository->getServiceSchedules($service_id);
@@ -56,7 +64,15 @@ class AppointmentsService
         }
     }
 
-    private function calculateWeeklyWiseSlot($serviceSchedules, $holidays, $existingAppointments)
+    /**
+     * Calculate the weekly-wise slots for each service schedule.
+     *
+     * @param collection $serviceSchedules - Collection of service schedules
+     * @param array $holidays - Array of holidays
+     * @param array $existingAppointments - Array of existing appointments
+     * @return array - Array containing weekly-wise slots
+     */
+    private function calculateWeeklyWiseSlot(Collection $serviceSchedules, array $holidays, array $existingAppointments): array
     {
         $weeklyWiseSlot = [];
 
@@ -68,7 +84,15 @@ class AppointmentsService
         return $weeklyWiseSlot;
     }
 
-    private function calculateAvailableSlots($serviceSchedule, $holidays, $existingAppointments)
+    /**
+     * Calculate the available slots for a service schedule.
+     *
+     * @param object $serviceSchedule - Service schedule object
+     * @param array $holidays - Array of holidays
+     * @param array $existingAppointments - Array of existing appointments
+     * @return array - Array of available slots
+     */
+    private function calculateAvailableSlots(object $serviceSchedule, array $holidays, array $existingAppointments): array
     {
         $timeBreaks = $this->getTimeBreaks($serviceSchedule, $holidays);
         $schedulesAndBreaks = $this->calculateSlotsAndBreaks(
@@ -95,7 +119,14 @@ class AppointmentsService
         return $availableSlots;
     }
 
-    private function getTimeBreaks($serviceSchedule, $holidays)
+    /**
+     * Get the time breaks for a service schedule.
+     *
+     * @param object $serviceSchedule - Service schedule object
+     * @param array $holidays - Array of holidays
+     * @return \Illuminate\Support\Collection - Collection of time breaks
+     */
+    private function getTimeBreaks(object $serviceSchedule, array $holidays)
     {
         if (array_key_exists($serviceSchedule->day_of_week, $holidays)) {
             $holiday = $holidays[$serviceSchedule->day_of_week];
@@ -110,7 +141,13 @@ class AppointmentsService
         }
     }
 
-    public function store($request)
+    /**
+     * Store an appointment.
+     *
+     * @param object $request - Request object
+     * @return array - Array containing 'success' or 'error' if an exception occurs
+     */
+    public function store(object $request): array
     {
         try {
             $service = $this->serviceRepository->getService($request->service_id);
@@ -140,14 +177,27 @@ class AppointmentsService
         }
     }
 
-    private function checkServiceAvailability($serviceSchedule)
+    /**
+     * Check if the service is available on the chosen day.
+     *
+     * @param object $serviceSchedule - Service schedule object
+     * @throws Exception
+     */
+    private function checkServiceAvailability(object $serviceSchedule)
     {
         if (!$serviceSchedule) {
             throw new Exception('The service is not available on the chosen day');
         }
     }
 
-    private function checkDateWithinBookableWindow($service, $appointmentStartTime)
+    /**
+     * Check if the appointment date is within the bookable window.
+     *
+     * @param object $service - Service object
+     * @param DateTime $appointmentStartTime - Appointment start time
+     * @throws Exception
+     */
+    private function checkDateWithinBookableWindow(object $service, DateTime $appointmentStartTime)
     {
         $now = new DateTime();
         $maxDate = (clone $now)->add(new DateInterval("P{$service->booking_days_in_advance}D"));
@@ -158,7 +208,15 @@ class AppointmentsService
         }
     }
 
-    private function checkIfAppointmentOnHoliday($service, $appointmentStartTime, $appointmentEndTime)
+    /**
+     * Check if the appointment falls on a holiday.
+     *
+     * @param object $service - Service object
+     * @param DateTime $appointmentStartTime - Appointment start time
+     * @param DateTime $appointmentEndTime - Appointment end time
+     * @throws Exception
+     */
+    private function checkIfAppointmentOnHoliday(object $service, DateTime $appointmentStartTime, DateTime $appointmentEndTime)
     {
         $holiday = $this->holidayRepository->getHoliday($service->id, $appointmentStartTime, $appointmentEndTime);
 
@@ -167,7 +225,15 @@ class AppointmentsService
         }
     }
 
-    private function checkAppointmentWithinOperatingHours($serviceSchedule, $appointmentStartTime, $appointmentEndTime)
+    /**
+     * Check if the appointment falls within the operating hours of the service.
+     *
+     * @param object $serviceSchedule - Service schedule object
+     * @param DateTime $appointmentStartTime - Appointment start time
+     * @param DateTime $appointmentEndTime - Appointment end time
+     * @throws Exception
+     */
+    private function checkAppointmentWithinOperatingHours(object $serviceSchedule, DateTime $appointmentStartTime, DateTime $appointmentEndTime)
     {
         $appointmentEndTimeClone = clone $appointmentEndTime;
         $appointmentStartTimeClone = clone $appointmentStartTime;
@@ -184,7 +250,16 @@ class AppointmentsService
         }
     }
 
-    private function checkAppointmentAgainstBreakTimes($service, $appointmentStartTime, $appointmentEndTime, $serviceSchedule)
+    /**
+     * Check if the appointment conflicts with break times.
+     *
+     * @param object $service - Service object
+     * @param DateTime $appointmentStartTime - Appointment start time
+     * @param DateTime $appointmentEndTime - Appointment end time
+     * @param object $serviceSchedule - Service schedule object
+     * @throws Exception
+     */
+    private function checkAppointmentAgainstBreakTimes(object $service, DateTime $appointmentStartTime, DateTime $appointmentEndTime, object $serviceSchedule)
     {
         $appointmentEndTimeClone = clone $appointmentEndTime;
         $appointmentStartTimeClone = clone $appointmentStartTime;
@@ -225,7 +300,16 @@ class AppointmentsService
         }
     }
 
-    private function checkAppointmentSlotAvailability($service, $appointmentStartTime, $appointmentEndTime, $users)
+    /**
+     * Check if the appointment slot is available.
+     *
+     * @param object $service - Service object
+     * @param DateTime $appointmentStartTime - Appointment start time
+     * @param DateTime $appointmentEndTime - Appointment end time
+     * @param array $users - Array of users
+     * @throws Exception
+     */
+    private function checkAppointmentSlotAvailability(object $service, DateTime $appointmentStartTime, DateTime $appointmentEndTime, array $users)
     {
         $conflictingAppointments = $this->appointmentRepository->getConflictingAppointments($service->id, $appointmentStartTime, $appointmentEndTime);
 
@@ -234,7 +318,16 @@ class AppointmentsService
         }
     }
 
-    private function createAppointments($request, $service, $appointmentStartTime, $appointmentEndTime)
+    /**
+     * Create appointments.
+     *
+     * @param object $request - Request object
+     * @param object $service - Service object
+     * @param DateTime $appointmentStartTime - Appointment start time
+     * @param DateTime $appointmentEndTime - Appointment end time
+     * @throws Exception
+     */
+    private function createAppointments(object $request, object $service, DateTime $appointmentStartTime, DateTime $appointmentEndTime)
     {
         foreach ($request->users as $userData) {
             $user = $this->userRepository->firstOrCreate(['email' => $userData['email']], [
